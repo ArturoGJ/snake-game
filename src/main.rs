@@ -1,10 +1,13 @@
 extern crate sdl2;
 
-use std::{ops::Add, time::Duration};
+pub mod game_context;
+pub mod renderer;
 
-use sdl2::{
-    event::Event::{KeyDown, Quit}, keyboard::Keycode, pixels::Color, rect::Rect, render::WindowCanvas, video::Window
-};
+use std::time::Duration;
+
+use game_context::GameContext;
+use renderer::Renderer;
+use sdl2::{event::Event::{KeyDown, Quit}, keyboard::Keycode};
 
 const GRID_X_SIZE: i32 = 40;
 const GRID_Y_SIZE: i32 = 30;
@@ -63,128 +66,4 @@ fn main() -> Result<(), String> {
     }
 
     Ok(())
-}
-
-pub enum GameState { Playing, Paused }
-pub enum PlayerDirection { Up, Down, Right, Left }
-
-#[derive(Copy, Clone)]
-pub struct Point(pub i32, pub i32);
-
-impl Add<Point> for Point {
-    type Output = Point;
-
-    fn add(self, rhs: Point) -> Self::Output {
-        Point(self.0 + rhs.0, self.1 + rhs.1)
-    }
-}
-
-pub struct GameContext {
-    pub player_position: Vec<Point>,
-    pub player_direction: PlayerDirection,
-    pub food: Point,
-    pub state: GameState,
-}
-
-impl GameContext {
-    pub fn new() -> GameContext {
-        GameContext {
-            player_position: vec![Point(3, 1), Point(2, 1), Point(1, 1)],
-            player_direction: PlayerDirection::Right,
-            food: Point(3, 3),
-            state: GameState::Playing,
-        }
-    }
-
-    pub fn update(&mut self) {
-        if let GameState::Paused = self.state {
-            return;
-        }
-
-        let head_position = self.player_position.first().unwrap();
-        let next_head_position = match self.player_direction {
-            PlayerDirection::Up => *head_position + Point(0, -1),
-            PlayerDirection::Down => *head_position + Point(0, 1),
-            PlayerDirection::Right => *head_position + Point(1, 0),
-            PlayerDirection::Left => *head_position + Point(-1, 0),
-        };
-        
-        self.player_position.pop();
-        self.player_position.reverse();
-        self.player_position.push(next_head_position);
-        self.player_position.reverse();
-    }
-
-    pub fn move_up(&mut self) {
-        if let PlayerDirection::Down = self.player_direction {
-            return;
-        }
-        self.player_direction = PlayerDirection::Up;
-    }
-
-    pub fn move_down(&mut self) {
-        if let PlayerDirection::Up = self.player_direction {
-            return;
-        }
-        self.player_direction = PlayerDirection::Down;
-    }
-
-    pub fn move_left(&mut self) {
-        if let PlayerDirection::Right = self.player_direction {
-            return;
-        }
-        self.player_direction = PlayerDirection::Left;
-    }
-
-    pub fn move_right(&mut self) {
-        if let PlayerDirection::Left = self.player_direction {
-            return;
-        }
-        self.player_direction = PlayerDirection::Right;
-    }
-
-    pub fn pause_toggle(&mut self) {
-        self.state = match self.state {
-            GameState::Playing => GameState::Paused,
-            GameState::Paused => GameState::Playing,
-        };
-    }
-}
-
-pub struct Renderer { canvas: WindowCanvas }
-
-impl Renderer {
-    pub fn new(window: Window) -> Result<Renderer, String> {
-        let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-        Ok(Renderer { canvas })
-    }
-
-    fn draw_dot(&mut self, point: &Point) -> Result<(), String> {
-        let Point(x, y) = point;
-        self.canvas.fill_rect(Rect::new(
-            x * DOT_SIZE_IN_PXS,
-            y * DOT_SIZE_IN_PXS,
-            DOT_SIZE_IN_PXS as u32,
-            DOT_SIZE_IN_PXS as u32
-        ))?;
-
-        Ok(())
-    }
-
-    pub fn draw(&mut self, game_context: &GameContext) -> Result<(), String> {
-        self.canvas.set_draw_color(Color::BLACK);
-        self.canvas.clear();
-
-        for point in game_context.player_position.iter() {
-            self.canvas.set_draw_color(Color::GREEN);
-            self.draw_dot(point)?;
-        }
-
-        self.canvas.set_draw_color(Color::RED);
-        self.draw_dot(&game_context.food)?;
-
-        self.canvas.present();
-
-        Ok(())
-    }
 }
