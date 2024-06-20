@@ -33,11 +33,17 @@ fn main() -> Result<(), String> {
     'running: loop {
         for event in event_pump.poll_iter() {
             match event {
-                Quit { .. }
-                | KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
+                Quit { .. } => break 'running,
+                KeyDown { keycode: Some(keycode), .. } => {
+                    match keycode {
+                        Keycode::W => context.move_up(),
+                        Keycode::S => context.move_down(),
+                        Keycode::A => context.move_left(),
+                        Keycode::D => context.move_right(),
+                        Keycode::Escape => context.pause_toggle(),
+                        _ => {}
+                    }
+                },
                 _ => {}
             }
         }
@@ -91,10 +97,14 @@ impl GameContext {
     }
 
     pub fn update(&mut self) {
+        if let GameState::Paused = self.state {
+            return;
+        }
+
         let head_position = self.player_position.first().unwrap();
         let next_head_position = match self.player_direction {
-            PlayerDirection::Up => *head_position + Point(0, 1),
-            PlayerDirection::Down => *head_position + Point(0, -1),
+            PlayerDirection::Up => *head_position + Point(0, -1),
+            PlayerDirection::Down => *head_position + Point(0, 1),
             PlayerDirection::Right => *head_position + Point(1, 0),
             PlayerDirection::Left => *head_position + Point(-1, 0),
         };
@@ -103,6 +113,41 @@ impl GameContext {
         self.player_position.reverse();
         self.player_position.push(next_head_position);
         self.player_position.reverse();
+    }
+
+    pub fn move_up(&mut self) {
+        if let PlayerDirection::Down = self.player_direction {
+            return;
+        }
+        self.player_direction = PlayerDirection::Up;
+    }
+
+    pub fn move_down(&mut self) {
+        if let PlayerDirection::Up = self.player_direction {
+            return;
+        }
+        self.player_direction = PlayerDirection::Down;
+    }
+
+    pub fn move_left(&mut self) {
+        if let PlayerDirection::Right = self.player_direction {
+            return;
+        }
+        self.player_direction = PlayerDirection::Left;
+    }
+
+    pub fn move_right(&mut self) {
+        if let PlayerDirection::Left = self.player_direction {
+            return;
+        }
+        self.player_direction = PlayerDirection::Right;
+    }
+
+    pub fn pause_toggle(&mut self) {
+        self.state = match self.state {
+            GameState::Playing => GameState::Paused,
+            GameState::Paused => GameState::Playing,
+        };
     }
 }
 
