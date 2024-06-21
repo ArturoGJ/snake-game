@@ -80,14 +80,10 @@ impl GameContext {
     }
 
     fn check_self_collition(&mut self) {
-        let mut head_position: Option<Point> = None;
-        for point in self.player_position.iter() {
-            if let Some(position) = head_position {
-                if position == *point {
-                    self.state = GameState::Over;
-                }             
-            } else {
-                head_position = Some(point.clone());
+        let head_position = self.player_position.first().unwrap();
+        for point in self.player_position.iter().skip(1) {
+            if head_position == point {
+                self.state = GameState::Over;
             }
         }
     }
