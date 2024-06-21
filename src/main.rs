@@ -59,7 +59,7 @@ fn main() -> Result<(), String> {
             frame_count = 0;
         }
 
-        let _ = renderer.draw(&context);
+        renderer.draw(&context)?;
 
         // We wait until the next loop, in this case it means we wait one
         // thirtieth of a second for each frame, which means that we process
