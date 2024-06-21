@@ -51,6 +51,8 @@ fn main() -> Result<(), String> {
             }
         }
 
+        context.check_game_over_conditions();
+
         frame_count += 1;
         if frame_count % 10 == 0 {
             context.update();

@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::{GRID_X_SIZE, GRID_Y_SIZE};
 
-pub enum GameState { Playing, Paused }
+pub enum GameState { Playing, Paused, Over }
 pub enum PlayerDirection { Up, Down, Right, Left }
 
 #[derive(Copy, Clone)]
@@ -42,7 +42,7 @@ impl GameContext {
     }
 
     pub fn update(&mut self) {
-        if let GameState::Paused = self.state {
+        if let GameState::Paused | GameState::Over = self.state {
             return;
         }
 
@@ -63,6 +63,33 @@ impl GameContext {
         self.player_position.reverse();
         self.player_position.push(next_head_position);
         self.player_position.reverse();
+    }
+
+    pub fn check_game_over_conditions(&mut self) {
+        self.check_wall_collition();
+        self.check_self_collition();
+    }
+
+    fn check_wall_collition(&mut self) {
+        let head_position = self.player_position.first().unwrap();
+        if head_position.0 < 0 || head_position.0 >= GRID_X_SIZE || 
+            head_position.1 < 0 || head_position.1 >= GRID_Y_SIZE {
+
+            self.state = GameState::Over;
+        }
+    }
+
+    fn check_self_collition(&mut self) {
+        let mut head_position: Option<Point> = None;
+        for point in self.player_position.iter() {
+            if let Some(position) = head_position {
+                if position == *point {
+                    self.state = GameState::Over;
+                }             
+            } else {
+                head_position = Some(point.clone());
+            }
+        }
     }
 
     fn eat(&mut self) {
@@ -103,6 +130,7 @@ impl GameContext {
         self.state = match self.state {
             GameState::Playing => GameState::Paused,
             GameState::Paused => GameState::Playing,
+            GameState::Over => todo!("Handle over state"),
         };
     }
 }
