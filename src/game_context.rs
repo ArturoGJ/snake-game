@@ -1,13 +1,13 @@
-use std::ops::Add;
+use std::{collections::HashSet, ops::Add};
 
-use rand::Rng;
+use rand::{seq::SliceRandom, thread_rng};
 
 use crate::{GRID_X_SIZE, GRID_Y_SIZE};
 
 pub enum GameState { Playing, Paused, Over }
 pub enum PlayerDirection { Up, Down, Right, Left }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, Hash)]
 pub struct Point(pub i32, pub i32);
 
 impl Add<Point> for Point {
@@ -89,9 +89,33 @@ impl GameContext {
     }
 
     fn eat(&mut self) {
-        let x = rand::thread_rng().gen_range(0..GRID_X_SIZE);
-        let y = rand::thread_rng().gen_range(0..GRID_Y_SIZE);
-        self.food = Point(x, y);
+        // Unavailable positions.
+        let mut set = HashSet::<&Point>::new();
+        for point in self.player_position.iter() {
+            set.insert(point);
+        }
+
+        // Possible food positions
+        let mut possible_positions: Vec<Point> = Vec::new();
+        for i in 0..GRID_X_SIZE {
+            for j in 0..GRID_Y_SIZE {
+                let point = Point(i, j);
+                if !set.contains(&point) {
+                    possible_positions.push(point);
+                }
+            }
+        }
+
+        // Get the new_food_position
+        let mut rng = thread_rng();
+        let new_food_position = possible_positions.choose(&mut rng);
+
+
+        if let Some(food_position) = new_food_position {
+            self.food = *food_position;
+        } else {
+            self.state = GameState::Over;
+        }
     }
 
     pub fn move_up(&mut self) {

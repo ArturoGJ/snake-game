@@ -9,8 +9,8 @@ use game_context::GameContext;
 use renderer::Renderer;
 use sdl2::{event::Event::{KeyDown, Quit}, keyboard::Keycode};
 
-const GRID_X_SIZE: i32 = 40;
-const GRID_Y_SIZE: i32 = 30;
+const GRID_X_SIZE: i32 = 20;
+const GRID_Y_SIZE: i32 = 20;
 const DOT_SIZE_IN_PXS: i32 = 20;
 
 fn main() -> Result<(), String> {
